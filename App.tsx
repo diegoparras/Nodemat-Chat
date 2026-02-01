@@ -137,6 +137,8 @@ const downloadImage = async (src: string, filenamePrefix: string = 'nodemat') =>
 };
 
 // --- UI COMPONENTS ---
+
+
 // Components are imported from ./components/
 const LoginScreen = ({ onLogin }: { onLogin: () => void }) => {
     const [user, setUser] = useState('');
@@ -197,6 +199,16 @@ const LoginScreen = ({ onLogin }: { onLogin: () => void }) => {
                         Ingresar
                     </button>
                 </form>
+
+                <a
+                    href="https://github.com/diegoparras/Nodemat-Chat"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-6 flex items-center justify-center gap-2 text-gray-500 hover:text-gray-800 transition-colors text-sm"
+                >
+                    <Search size={18} />
+                    Explorá el proyecto completo en GitHub
+                </a>
             </div>
         </div>
     );
