@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nodemat Chat</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <!-- Keeping Tailwind CDN for simplicity in this migration without setting up PostCSS locally -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          },
+          colors: {
+            // Semantic colors mapping to CSS variables
+            primary: 'var(--color-primary)',
+            'primary-hover': 'var(--color-primary-hover)',
+            'primary-light': 'var(--color-primary-light)',
+
+            background: 'var(--color-background)',
+            surface: 'var(--color-surface)',
+            'surface-highlight': 'var(--color-surface-highlight)',
+
+            text: {
+              main: 'var(--color-text-main)',
+              muted: 'var(--color-text-muted)',
+              inverted: 'var(--color-text-inverted)',
+            },
+
+            border: 'var(--color-border)',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+
+    /* Custom scrollbar for chat */
+    .scrollbar-hide::-webkit-scrollbar {
+      display: none;
+    }
+
+    .scrollbar-hide {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+
+    /* Transitions for color changes */
+    * {
+      transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
+      transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+      transition-duration: 300ms;
+    }
+  </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
+    "react/": "https://esm.sh/react@^19.2.4/",
+    "react": "https://esm.sh/react@^19.2.4",
+    "lucide-react": "https://esm.sh/lucide-react@^0.563.0",
+    "vite": "https://esm.sh/vite@^7.3.1",
+    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2",
+    "react-markdown": "https://esm.sh/react-markdown@^10.1.0",
+    "remark-gfm": "https://esm.sh/remark-gfm@^4.0.1"
+  }
+}
+</script>
+  <link rel="stylesheet" href="/index.css">
+</head>
+
+<body class="bg-background text-text-main h-screen overflow-hidden transition-colors duration-300">
+  <div id="root" class="h-full"></div>
+  <!-- Entry point for Vite -->
+  <script type="module" src="/index.tsx"></script>
+</body>
+
+</html>

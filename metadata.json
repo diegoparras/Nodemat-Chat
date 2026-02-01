@@ -1,0 +1,5 @@
+{
+  "name": "Nodemat Chat",
+  "description": "Un chatbot educativo y privado que conecta con Groq, OpenRouter y Gemini. Diseñado para principiantes con guías visuales.",
+  "requestFramePermissions": []
+}
