@@ -1845,7 +1845,8 @@ export default function App() {
     const handleSend = async () => {
         if ((!input.trim() && attachments.length === 0) || isLoading) return;
 
-        const isConnected = settings.activeProvider === 'groq' ? settings.groqConnected : settings.openRouterConnected;
+        const connectedKey = `${settings.activeProvider}Connected` as keyof AppSettings;
+        const isConnected = settings[connectedKey];
         if (!isConnected) {
             alert(`Por favor, conecta ${settings.activeProvider.toUpperCase()} en los Ajustes primero.`);
             setIsSettingsOpen(true);
