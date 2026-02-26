@@ -1845,8 +1845,12 @@ export default function App() {
     const handleSend = async () => {
         if ((!input.trim() && attachments.length === 0) || isLoading) return;
 
-        const connectedKey = `${settings.activeProvider}Connected` as keyof AppSettings;
-        const isConnected = settings[connectedKey];
+    const connectedMap: Record<Provider, keyof AppSettings> = {
+        groq: 'groqConnected', openrouter: 'openRouterConnected', openai: 'openaiConnected',
+        cerebras: 'cerebrasConnected', gemini: 'geminiConnected', xai: 'xaiConnected',
+        custom1: 'custom1Connected', custom2: 'custom2Connected'
+    };
+const isConnected = settings[connectedMap[settings.activeProvider]];
         if (!isConnected) {
             alert(`Por favor, conecta ${settings.activeProvider.toUpperCase()} en los Ajustes primero.`);
             setIsSettingsOpen(true);
