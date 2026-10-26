@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { getFriendlyLLMError } from '../services/llmService';
-import { pickVisibleModels } from '../server/chatgpt';
+import { isValidClientVersion, pickVisibleModels } from '../server/chatgpt';
+import { joinVersion, splitVersion } from '../services/chatgptAuth';
 
 describe('mensajes de error de proveedores', () => {
     it('reconoce el límite de gasto de una key de OpenRouter (no es la conexión)', () => {
@@ -32,5 +33,27 @@ describe('modelos de la cuenta de ChatGPT', () => {
 
     it('acepta respuestas sin campo visibility', () => {
         expect(pickVisibleModels([{ id: 'x' }, { name: 'y' }, {}])).toEqual(['x', 'y']);
+    });
+});
+
+describe('versión de Codex en tres bloques', () => {
+    it('une los bloques con puntos y exige los tres números', () => {
+        expect(joinVersion(['0', '164', '0'])).toBe('0.164.0');
+        expect(joinVersion([' 0', '0165 ', '2'])).toBe('0.165.2');
+        expect(joinVersion(['0', '', '0'])).toBe('');
+        expect(joinVersion(['0', 'abc', '0'])).toBe('');
+    });
+
+    it('separa una versión pegada, con o sin el prefijo de GitHub', () => {
+        expect(splitVersion('rust-v0.164.0')).toEqual(['0', '164', '0']);
+        expect(splitVersion('0.170.3')).toEqual(['0', '170', '3']);
+        expect(splitVersion('164')).toBeNull();
+    });
+
+    it('el servidor sólo acepta N.N.N', () => {
+        expect(isValidClientVersion('0.164.0')).toBe(true);
+        expect(isValidClientVersion('0.164')).toBe(false);
+        expect(isValidClientVersion('0.164.0&x=1')).toBe(false);
+        expect(isValidClientVersion(undefined)).toBe(false);
     });
 });

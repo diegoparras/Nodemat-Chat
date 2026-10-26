@@ -89,6 +89,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
     chatgptModel: 'gpt-5',
     chatgptConnected: false,
     chatgptModelsList: ['gpt-5', 'gpt-5-codex'],
+    chatgptClientVersion: '0.164.0',
 
     proxyToken: '',
 

@@ -4,7 +4,7 @@ import { AppSettings } from '../types';
 import { SearchableSelect } from './SearchableSelect';
 import { SecretInput } from './SecretInput';
 import {
-    startChatGPTLogin, completeChatGPTLogin, importCodexAuthJson, accountToSettings, fetchChatGPTModels, ensureFreshChatGPTToken, ChatGPTAccount
+    startChatGPTLogin, completeChatGPTLogin, importCodexAuthJson, accountToSettings, fetchChatGPTModels, ensureFreshChatGPTToken, joinVersion, splitVersion, ChatGPTAccount
 } from '../services/chatgptAuth';
 
 interface Props {
@@ -24,8 +24,37 @@ export const ChatGPTAccountCard: React.FC<Props> = ({ settings, setSettings }) =
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState('');
 
+    // Versión de Codex en tres bloques; se guarda unida ("0.164.0") en los ajustes locales
+    const [versionParts, setVersionParts] = useState<string[]>(
+        () => splitVersion(settings.chatgptClientVersion) || ['', '', '']
+    );
+    const joinedVersion = joinVersion(versionParts);
+
+    const setVersion = (parts: string[]) => {
+        setVersionParts(parts);
+        const joined = joinVersion(parts);
+        if (joined) setSettings(s => ({ ...s, chatgptClientVersion: joined }));
+    };
+
+    const updateVersionPart = (index: number, value: string) => {
+        const pasted = splitVersion(value);
+        if (pasted) return setVersion(pasted);
+        setVersion(versionParts.map((p, i) => i === index ? value.replace(/\D/g, '').slice(0, 5) : p));
+    };
+
+    const refreshModels = (clientVersion?: string) => run(async () => {
+        const { accessToken, accountId } = await ensureFreshChatGPTToken(settings, p => setSettings(s => ({ ...s, ...p })));
+        const models = await fetchChatGPTModels(accessToken, accountId, clientVersion || undefined);
+        setSettings(s => ({
+            ...s,
+            chatgptModelsList: models,
+            // Si el modelo elegido ya no está disponible, pasar al primero de la lista
+            chatgptModel: models.includes(s.chatgptModel) ? s.chatgptModel : models[0]
+        }));
+    });
+
     const finish = async (acc: ChatGPTAccount) => {
-        const models = await fetchChatGPTModels(acc.access_token, acc.account_id || '');
+        const models = await fetchChatGPTModels(acc.access_token, acc.account_id || '', settings.chatgptClientVersion || undefined);
         setSettings(s => ({
             ...s,
             ...accountToSettings(acc),
@@ -86,20 +115,54 @@ export const ChatGPTAccountCard: React.FC<Props> = ({ settings, setSettings }) =
                             />
                         </div>
                         <button
-                            onClick={() => run(async () => {
-                                const { accessToken, accountId } = await ensureFreshChatGPTToken(settings, p => setSettings(s => ({ ...s, ...p })));
-                                const models = await fetchChatGPTModels(accessToken, accountId);
-                                setSettings(s => ({
-                                    ...s,
-                                    chatgptModelsList: models,
-                                    // Si el modelo elegido ya no está disponible, pasar al primero de la lista
-                                    chatgptModel: models.includes(s.chatgptModel) ? s.chatgptModel : models[0]
-                                }));
-                            })}
+                            onClick={() => refreshModels(settings.chatgptClientVersion)}
                             className="p-2.5 border border-border rounded-lg text-text-muted hover:text-text-main" title="Actualizar lista de modelos"
                         >
                             <RefreshCw size={16} className={busy ? 'animate-spin' : ''} />
                         </button>
+                    </div>
+
+                    {/* Versión de Codex: el backend lista los modelos según la versión del cliente */}
+                    <div className="pt-1">
+                        <label className="block text-xs font-semibold text-text-muted mb-1 uppercase">Versión de Codex</label>
+                        <div className="flex flex-wrap items-center gap-2">
+                            <div className="flex items-center gap-1">
+                                {versionParts.map((part, i) => (
+                                    <React.Fragment key={i}>
+                                        {i > 0 && <span className="font-bold text-text-muted">.</span>}
+                                        <input
+                                            type="text"
+                                            inputMode="numeric"
+                                            value={part}
+                                            onChange={e => updateVersionPart(i, e.target.value)}
+                                            onPaste={e => {
+                                                const parts = splitVersion(e.clipboardData.getData('text'));
+                                                if (parts) { e.preventDefault(); setVersion(parts); }
+                                            }}
+                                            placeholder={['0', '164', '0'][i]}
+                                            aria-label={['Versión mayor', 'Versión menor', 'Parche'][i]}
+                                            className="w-16 p-2 border border-border bg-background rounded-lg text-sm font-mono text-center text-text-main outline-none focus:ring-2 focus:ring-primary"
+                                        />
+                                    </React.Fragment>
+                                ))}
+                            </div>
+                            <button
+                                onClick={() => refreshModels(joinedVersion)}
+                                disabled={busy || !joinedVersion}
+                                className="px-3 py-2 bg-primary text-white rounded-lg text-xs font-medium disabled:opacity-50"
+                            >
+                                Aplicar y actualizar modelos
+                            </button>
+                        </div>
+                        <p className="text-[11px] text-text-muted mt-1">
+                            {joinedVersion
+                                ? <>Se enviará <code>{joinedVersion}</code>. </>
+                                : <span className="text-amber-600">Completa los tres números. </span>}
+                            La última está en{' '}
+                            <a href="https://github.com/openai/codex/releases/latest" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                                github.com/openai/codex/releases
+                            </a>{' '}(ej. <code>rust-v0.164.0</code> → 0 · 164 · 0). Puedes pegarla entera en cualquier casilla.
+                        </p>
                     </div>
                 </div>
             ) : (

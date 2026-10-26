@@ -259,6 +259,8 @@ export interface AppSettings {
   chatgptModel: string;
   chatgptConnected: boolean;
   chatgptModelsList: string[];
+  // Versión de Codex CLI declarada al listar modelos (ej. "0.164.0"); vacía = la del servidor
+  chatgptClientVersion: string;
 
   // Token compartido con las funciones /api (NODEMAT_PROXY_TOKEN en Vercel)
   proxyToken: string;

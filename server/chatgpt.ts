@@ -45,6 +45,10 @@ const CODEX_BASE_URL = 'https://chatgpt.com/backend-api/codex';
  */
 export const CODEX_CLIENT_VERSION = '0.164.0';
 
+/** Sólo aceptamos "N.N.N" (se arma en la URL: nada de texto libre). */
+export const isValidClientVersion = (v: unknown): v is string =>
+    typeof v === 'string' && /^\d{1,5}\.\d{1,5}\.\d{1,5}$/.test(v);
+
 /**
  * Codex sólo muestra en su selector los modelos con `visibility: "list"`, ordenados por
  * `priority`; los "hide" son internos (p. ej. codex-auto-review). Hacemos lo mismo.
@@ -166,7 +170,10 @@ export async function handleChatGPT(request: Request, env: ChatGPTEnv): Promise<
             if (!payload.access_token) return json(400, { error: 'Falta access_token' });
             // El backend sólo devuelve los modelos compatibles con la versión de Codex que
             // declara el cliente: con una versión vieja la lista sale casi vacía.
-            const version = env.CHATGPT_CLIENT_VERSION || CODEX_CLIENT_VERSION;
+            // Prioridad: la que cargó el usuario en Ajustes > variable de entorno > la de este código
+            const version = isValidClientVersion(payload.client_version)
+                ? payload.client_version
+                : env.CHATGPT_CLIENT_VERSION || CODEX_CLIENT_VERSION;
             const res = await fetch(`${CODEX_BASE_URL}/models?client_version=${encodeURIComponent(version)}`, {
                 headers: codexHeaders(env, payload.access_token, payload.account_id)
             }).catch((e) => ({ ok: false, status: 502, text: async () => String(e) } as any));

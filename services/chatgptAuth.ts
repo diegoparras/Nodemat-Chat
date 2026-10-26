@@ -183,9 +183,25 @@ export async function ensureFreshChatGPTToken(
     }
 }
 
-export async function fetchChatGPTModels(accessToken: string, accountId: string): Promise<string[]> {
+/** Une los tres bloques de una versión ("0", "164", "0" -> "0.164.0"); '' si falta alguno. */
+export function joinVersion(parts: string[]): string {
+    const clean = parts.map(p => (p || '').trim());
+    return clean.length === 3 && clean.every(p => /^\d{1,5}$/.test(p)) ? clean.map(p => String(Number(p))).join('.') : '';
+}
+
+/** Separa una versión pegada ("rust-v0.164.0", "0.164.0") en sus tres bloques. */
+export function splitVersion(text: string): string[] | null {
+    const m = (text || '').match(/(\d{1,5})\.(\d{1,5})\.(\d{1,5})/);
+    return m ? [m[1], m[2], m[3]] : null;
+}
+
+export async function fetchChatGPTModels(accessToken: string, accountId: string, clientVersion?: string): Promise<string[]> {
     try {
-        const { models } = await chatgptBridge<{ models: string[] }>('models', { access_token: accessToken, account_id: accountId });
+        const { models } = await chatgptBridge<{ models: string[] }>('models', {
+            access_token: accessToken,
+            account_id: accountId,
+            ...(clientVersion ? { client_version: clientVersion } : {})
+        });
         return models.length ? models : CHATGPT_FALLBACK_MODELS;
     } catch {
         return CHATGPT_FALLBACK_MODELS;
