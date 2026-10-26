@@ -89,7 +89,12 @@ export const ChatGPTAccountCard: React.FC<Props> = ({ settings, setSettings }) =
                             onClick={() => run(async () => {
                                 const { accessToken, accountId } = await ensureFreshChatGPTToken(settings, p => setSettings(s => ({ ...s, ...p })));
                                 const models = await fetchChatGPTModels(accessToken, accountId);
-                                setSettings(s => ({ ...s, chatgptModelsList: models }));
+                                setSettings(s => ({
+                                    ...s,
+                                    chatgptModelsList: models,
+                                    // Si el modelo elegido ya no está disponible, pasar al primero de la lista
+                                    chatgptModel: models.includes(s.chatgptModel) ? s.chatgptModel : models[0]
+                                }));
                             })}
                             className="p-2.5 border border-border rounded-lg text-text-muted hover:text-text-main" title="Actualizar lista de modelos"
                         >

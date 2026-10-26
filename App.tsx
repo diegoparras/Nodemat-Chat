@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Send, Menu, X, Plus, MessageSquare, Trash2, RefreshCw, Copy, Square, Paperclip, ChevronDown, Upload, Wrench, VenetianMask, EyeOff, FileCode } from 'lucide-react';
 import { Share2, FileText, FileJson, Sparkles, BookOpen } from 'lucide-react';
 import { storageService } from './services/storageService';
-import { sendMessage, fetchModels, completeOnce, ToolApprovalRequest } from './services/llmService';
+import { sendMessage, fetchModels, completeOnce, getFriendlyLLMError, ToolApprovalRequest } from './services/llmService';
 import { connectServer, disconnectServer, getFriendlyMCPError, refreshServerLists, setMCPHooks, MCPProgress } from './services/mcpClient';
 import { authorizeServer, openAuthPopup } from './services/mcpOAuth';
 import { MCPServerRequestModal, PendingServerRequest } from './components/MCPServerRequestModal';
@@ -806,7 +806,9 @@ export default function App() {
             const errorMsg: Message = {
                 id: (Date.now() + 1).toString(),
                 role: 'system',
-                content: cancelled ? '⏹️ Generación detenida por el usuario.' : `Error: ${error.message}. Verifica tu conexión.`,
+                content: cancelled
+                    ? '⏹️ Generación detenida por el usuario.'
+                    : getFriendlyLLMError(error?.message, PROVIDER_NAMES[settings.activeProvider] || settings.activeProvider),
                 timestamp: Date.now()
             };
             showMessages([...partial, errorMsg]);

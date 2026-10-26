@@ -38,6 +38,25 @@ export const CHATGPT_OAUTH = {
 };
 const CODEX_BASE_URL = 'https://chatgpt.com/backend-api/codex';
 
+/**
+ * Versión de Codex CLI que declaramos al pedir la lista de modelos (codex-rs/codex-api,
+ * `client_version`). Actualizar cuando salga una versión nueva de Codex, o definir
+ * CHATGPT_CLIENT_VERSION en el entorno. Última revisada: rust-v0.164.0 (2026-10-23).
+ */
+export const CODEX_CLIENT_VERSION = '0.164.0';
+
+/**
+ * Codex sólo muestra en su selector los modelos con `visibility: "list"`, ordenados por
+ * `priority`; los "hide" son internos (p. ej. codex-auto-review). Hacemos lo mismo.
+ */
+export function pickVisibleModels(list: any[]): string[] {
+    const slug = (m: any) => m?.slug || m?.id || m?.name;
+    const listed = list
+        .filter(m => slug(m) && (m.visibility === undefined || m.visibility === 'list'))
+        .sort((a, b) => (a.priority ?? 0) - (b.priority ?? 0));
+    return [...new Set(listed.map(slug))];
+}
+
 const json = (status: number, body: any) => new Response(JSON.stringify(body), {
     status,
     headers: { 'content-type': 'application/json', 'cache-control': 'no-store' }
@@ -145,16 +164,15 @@ export async function handleChatGPT(request: Request, env: ChatGPTEnv): Promise<
 
         case 'models': {
             if (!payload.access_token) return json(400, { error: 'Falta access_token' });
-            const version = env.CHATGPT_CLIENT_VERSION || '0.99.0';
+            // El backend sólo devuelve los modelos compatibles con la versión de Codex que
+            // declara el cliente: con una versión vieja la lista sale casi vacía.
+            const version = env.CHATGPT_CLIENT_VERSION || CODEX_CLIENT_VERSION;
             const res = await fetch(`${CODEX_BASE_URL}/models?client_version=${encodeURIComponent(version)}`, {
                 headers: codexHeaders(env, payload.access_token, payload.account_id)
             }).catch((e) => ({ ok: false, status: 502, text: async () => String(e) } as any));
             if (!res.ok) return json(res.status, { error: `No se pudo listar modelos (${res.status}): ${(await res.text()).slice(0, 300)}` });
             const data = await res.json();
-            const models = (data.models || data.data || [])
-                .map((m: any) => m.slug || m.id || m.name)
-                .filter(Boolean);
-            return json(200, { models });
+            return json(200, { models: pickVisibleModels(data.models || data.data || []) });
         }
 
         case 'responses': {

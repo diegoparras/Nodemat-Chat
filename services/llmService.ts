@@ -112,6 +112,29 @@ const uid = () => (crypto as any).randomUUID?.() ?? `${Date.now()}-${Math.random
 // Re-export para compatibilidad con código existente
 export { getFriendlyMCPError };
 
+/**
+ * Convierte el error de un proveedor en un mensaje que diga QUÉ pasó y qué hacer.
+ * Antes todo terminaba en "Verifica tu conexión", aunque el problema fuera el saldo.
+ */
+export function getFriendlyLLMError(message: string, providerName: string): string {
+    const msg = message || 'Error desconocido';
+    if (/key limit exceeded|credit limit|insufficient[_ ](credits|quota|balance|funds)|exceeded your current quota|requires more credits|payment required|\b402\b|billing/i.test(msg)) {
+        return `💳 Se agotó el saldo o el límite de gasto de tu API key de ${providerName}. No es un problema de conexión.\n\n` +
+            `Qué hacer: carga créditos o sube/quita el límite de esa key en el panel del proveedor ` +
+            `(en OpenRouter: openrouter.ai/settings/keys → editar la key → "Credit limit"), o usa otro proveedor.\n\nDetalle: ${msg}`;
+    }
+    if (/\b401\b|invalid[_ ]api[_ ]key|incorrect api key|unauthorized|no auth credentials/i.test(msg)) {
+        return `🔑 ${providerName} rechazó la API key (inválida, vencida o revocada). Revísala en Ajustes.\n\nDetalle: ${msg}`;
+    }
+    if (/\b429\b|rate[_ ]limit|too many requests/i.test(msg)) {
+        return `⏳ ${providerName} está limitando la cantidad de pedidos. Espera un momento y vuelve a intentar.\n\nDetalle: ${msg}`;
+    }
+    if (/Failed to fetch|NetworkError|Load failed|ERR_NETWORK|ECONNRESET/i.test(msg)) {
+        return `📡 No se pudo conectar con ${providerName}. Verifica tu conexión a internet.\n\nDetalle: ${msg}`;
+    }
+    return `Error de ${providerName}: ${msg}`;
+}
+
 // ============================================================================
 // API CALLS - MODEL FETCHING
 // ============================================================================
